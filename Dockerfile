@@ -1,7 +1,7 @@
 # Build
 FROM golang:1 as build
 
-WORKDIR /go/src/github.com/gmauleon/alertmanager-zabbix-webhook
+WORKDIR /go/src/github.com/jonathanJCfravega/alertmanager-zabbix-webhook
 ADD . .
 
 RUN go get -d -v ./...
