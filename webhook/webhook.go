@@ -73,15 +73,15 @@ func ConfigFromFile(filename string) (cfg *WebHookConfig, err error) {
 		QueueCapacity:        500,
 		ZabbixServerHost:     "127.0.0.1",
 		ZabbixServerPort:     10051,
-		ZabbixHostAnnotation: "zabbix_host",
-		ZabbixKeyPrefix:      "prometheus",
+		ZabbixHostAnnotation: "instance",
+		ZabbixKeyPrefix:      "dev",
 	}
 
-	err = yaml.Unmarshal(configFile, &config)
+	err = json.Unmarshal(configFile, &config)
 	if err != nil {
 		return nil, fmt.Errorf("can't read the config file: %s", err)
 	}
-
+	log.Info("Configuration loaded ZabbixHostAnotation: %s ", config.ZabbixHostAnnotation)
 	log.Info("Configuration loaded")
 	return &config, nil
 }
@@ -92,7 +92,7 @@ func (hook *WebHook) Start() error {
 	go hook.processAlerts()
 
 	// Launch the listening thread
-	log.Println("Initializing HTTP server")
+	log.Println("Initializing HTTP-server")
 	http.HandleFunc("/alerts", hook.alertsHandler)
 	err := http.ListenAndServe(":"+strconv.Itoa(hook.config.Port), nil)
 	if err != nil {
