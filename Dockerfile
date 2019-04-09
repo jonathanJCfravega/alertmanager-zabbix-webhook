@@ -15,7 +15,7 @@ RUN adduser webhook -s /bin/false -D webhook
 RUN mkdir -p /etc/webhook
 COPY config.yaml /etc/webhook
 
-COPY --from=build /go/src/github.com/gmauleon/alertmanager-zabbix-webhook/alertmanager-zabbix-webhook /usr/bin
+COPY --from=build /go/src/github.com/jonathanJCfravega/alertmanager-zabbix-webhook/alertmanager-zabbix-webhook /usr/bin
 
 EXPOSE 8080
 USER webhook
