@@ -77,7 +77,7 @@ func ConfigFromFile(filename string) (cfg *WebHookConfig, err error) {
 		ZabbixKeyPrefix:      "dev",
 	}
 
-	err = json.Unmarshal(configFile, &config)
+	err = yaml.Unmarshal(configFile, &config)
 	if err != nil {
 		return nil, fmt.Errorf("can't read the config file: %s", err)
 	}
@@ -134,13 +134,15 @@ func (hook *WebHook) postHandler(w http.ResponseWriter, r *http.Request) {
 
 func (hook *WebHook) processAlerts() {
 
-	log.Info("Alerts queue started")
+	log.Info("Alerts queue started - ProcessAlerts")
 
 	// While there are alerts in the queue, batch them and send them over to Zabbix
 	var metrics []*zabbix.Metric
 	for {
+		log.Info("Entró al for - ProcessAlerts")
 		select {
 		case a := <-hook.channel:
+			log.Info("Entró al case a - ProcessAlerts")
 			if a == nil {
 				log.Info("Queue Closed")
 				return
@@ -150,20 +152,25 @@ func (hook *WebHook) processAlerts() {
 
 			// Send alerts only if a host annotation is present
 			if host != "" {
+				log.Info("Entro al if host !=   - ProcessAlerts" )
 				key := fmt.Sprintf("%s.%s", hook.config.ZabbixKeyPrefix, strings.ToLower(a.Labels["alertname"]))
 				value := "0"
 				if a.Status == "firing" {
 					value = "1"
+					log.Info("Entro al if a.status== firing - ProcessAlerts")
 				}
 
 				log.Infof("added Zabbix metrics, host: '%s' key: '%s', value: '%s'", host, key, value)
 				metrics = append(metrics, zabbix.NewMetric(host, key, value))
 			}
 		default:
+			log.Info("Entró por default - ProcessAlerts")
 			if len(metrics) != 0 {
+				log.Info("Entró por if len(metrics) != 0 - ProcessAlerts")
 				hook.zabbixSend(metrics)
 				metrics = metrics[:0]
 			} else {
+				log.Info("Entró por else en if len(metrics) != 0 - ProcessAlerts")
 				time.Sleep(1 * time.Second)
 			}
 		}
