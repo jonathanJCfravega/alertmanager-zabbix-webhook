@@ -81,7 +81,6 @@ func ConfigFromFile(filename string) (cfg *WebHookConfig, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't read the config file: %s", err)
 	}
-	log.Info("Configuration loaded ZabbixHostAnotation: %s ", config.ZabbixHostAnnotation)
 	log.Info("Configuration loaded")
 	return &config, nil
 }
@@ -92,7 +91,7 @@ func (hook *WebHook) Start() error {
 	go hook.processAlerts()
 
 	// Launch the listening thread
-	log.Println("Initializing HTTP-server")
+	log.Println("Initializing HTTP server")
 	http.HandleFunc("/alerts", hook.alertsHandler)
 	err := http.ListenAndServe(":"+strconv.Itoa(hook.config.Port), nil)
 	if err != nil {
@@ -139,38 +138,35 @@ func (hook *WebHook) processAlerts() {
 	// While there are alerts in the queue, batch them and send them over to Zabbix
 	var metrics []*zabbix.Metric
 	for {
-		log.Info("Entró al for - ProcessAlerts")
 		select {
+
 		case a := <-hook.channel:
-			log.Info("Entró al case a - ProcessAlerts")
+
 			if a == nil {
 				log.Info("Queue Closed")
 				return
 			}
 
-			host, _ := a.Annotations[hook.config.ZabbixHostAnnotation]
+			host, _ := a.Labels[hook.config.ZabbixHostAnnotation]
 
-			// Send alerts only if a host annotation is present
+			// original (Send alerts only if a host annotation is present)
+			// send alerts only if a label is equal to ZabbixHostAnnotation on the config
+
 			if host != "" {
-				log.Info("Entro al if host !=   - ProcessAlerts" )
 				key := fmt.Sprintf("%s.%s", hook.config.ZabbixKeyPrefix, strings.ToLower(a.Labels["alertname"]))
 				value := "0"
 				if a.Status == "firing" {
 					value = "1"
-					log.Info("Entro al if a.status== firing - ProcessAlerts")
 				}
 
 				log.Infof("added Zabbix metrics, host: '%s' key: '%s', value: '%s'", host, key, value)
 				metrics = append(metrics, zabbix.NewMetric(host, key, value))
 			}
 		default:
-			log.Info("Entró por default - ProcessAlerts")
 			if len(metrics) != 0 {
-				log.Info("Entró por if len(metrics) != 0 - ProcessAlerts")
 				hook.zabbixSend(metrics)
 				metrics = metrics[:0]
 			} else {
-				log.Info("Entró por else en if len(metrics) != 0 - ProcessAlerts")
 				time.Sleep(1 * time.Second)
 			}
 		}
